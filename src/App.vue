@@ -1,3 +1,9 @@
+<script setup lang="ts">
+import TheOverlay from '@/components/TheOverlay.vue';
+</script>
+
 <template>
-  <h1 class="text-3xl">Mega Vue 3 Overlay!!!!</h1>
+  <div class="h-screen w-screen overflow-hidden bg-transparent antialiased">
+    <TheOverlay />
+  </div>
 </template>
