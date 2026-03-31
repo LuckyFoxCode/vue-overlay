@@ -3,4 +3,5 @@ export interface Message {
   user: string;
   text: string;
   color: string;
+  badges: string[];
 }

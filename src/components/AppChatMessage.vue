@@ -5,10 +5,18 @@ const { message } = defineProps<{ message: Message }>();
 </script>
 
 <template>
-  <li class="rounded-l-lg border-b border-slate-300 px-1 py-2 text-sm">
+  <li class="rounded-tr-xl rounded-bl-xl bg-slate-950/70 px-2 py-3 align-middle text-sm">
+    <span class="mr-1 inline-flex gap-1">
+      <img
+        v-for="badge in message.badges"
+        :key="badge"
+        :src="badge"
+        class="size-4"
+      />
+    </span>
     <span
       :style="{ color: message.color }"
-      class="mr-1 inline font-bold"
+      class="mr-1 inline-block align-top font-bold"
       >{{ message.user }}:</span
     >
 

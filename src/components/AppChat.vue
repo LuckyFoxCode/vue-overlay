@@ -1,9 +1,22 @@
 <script setup lang="ts">
 import type { Message } from '@/types';
+import { ApiClient } from '@twurple/api';
 import { StaticAuthProvider } from '@twurple/auth';
 import { ChatClient, ChatMessage } from '@twurple/chat';
 import { onMounted, ref } from 'vue';
 import AppChatMessage from './AppChatMessage.vue';
+
+interface BadgeVersion {
+  id: string;
+  getImageUrl(scale: number): string;
+}
+
+interface BadgeSet {
+  id: string;
+  versions: BadgeVersion[];
+}
+
+type BadgeMap = Record<string, Record<string, string>>;
 
 const messages = ref<Message[]>([]);
 
@@ -21,20 +34,57 @@ onMounted(async () => {
 
   try {
     const authProvider = new StaticAuthProvider(clientId, accessToken);
+    const apiClient = new ApiClient({ authProvider });
+
+    const user = await apiClient.users.getUserByName(channel);
+    if (!user) {
+      console.error('User not found.');
+      return;
+    }
+
+    const globalBadges = await apiClient.chat.getGlobalBadges();
+    const channelBadges = await apiClient.chat.getChannelBadges(user.id);
+
+    function mapBadges(badges: BadgeSet[]): BadgeMap {
+      const result: BadgeMap = {};
+
+      badges.forEach((set) => {
+        const setKey = set.id;
+        result[setKey] = result[setKey] ?? {};
+
+        set.versions.forEach((v) => {
+          result[setKey]![v.id] = v.getImageUrl(2);
+        });
+      });
+      return result;
+    }
+
+    const globalMap = mapBadges(globalBadges);
+    const channelMap = mapBadges(channelBadges);
 
     chatClient = new ChatClient({ authProvider, channels: [channel] });
 
     chatClient.onMessage((_channel, _user, text, msg: ChatMessage) => {
+      const userBadges: Map<string, string> = msg.userInfo.badges || new Map();
+      const badgeUrls: string[] = [];
+
+      for (const [type, version] of userBadges.entries()) {
+        const url = channelMap[type]?.[version] || globalMap[type]?.[version];
+
+        if (url) badgeUrls.push(url);
+      }
+
       const newMessage: Message = {
         id: msg.id,
         user: msg.userInfo.displayName,
         text: text,
         color: msg.userInfo.color || '#3b82f6',
+        badges: badgeUrls,
       };
 
       messages.value.push(newMessage);
 
-      if (messages.value.length > 12) {
+      if (messages.value.length > 10) {
         messages.value.shift();
       }
     });
@@ -48,9 +98,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div
-    class="absolute top-1/2 right-4 z-1 h-160 w-100 -translate-y-1/2 rounded-lg border border-transparent bg-slate-950/60 p-2 text-white shadow-lg"
-  >
+  <div class="absolute top-1/2 right-1 z-1 h-fit w-100 -translate-y-1/2 rounded-lg p-2 text-white">
     <TransitionGroup
       tag="ul"
       name="chat"

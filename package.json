@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
+    "@twurple/api": "^8.0.3",
     "@twurple/auth": "^8.0.3",
     "@twurple/chat": "^8.0.3",
     "tailwindcss": "^4.2.2",
